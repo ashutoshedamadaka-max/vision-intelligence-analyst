@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  /* Typography */
+  --font-serif: 'Instrument Serif', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  /* Surface palette — near-black defense UI */
+  --color-surface-0: oklch(0.08 0.005 240);
+  --color-surface-1: oklch(0.11 0.006 240);
+  --color-surface-2: oklch(0.15 0.007 240);
+  --color-border: oklch(0.25 0.005 240 / 0.5);
+
+  /* Semantic intent colors */
+  --color-confirmed: oklch(0.65 0.14 160);
+  --color-confirmed-dim: oklch(0.65 0.14 160 / 0.15);
+  --color-review: oklch(0.75 0.16 75);
+  --color-review-dim: oklch(0.75 0.16 75 / 0.15);
+  --color-threat: oklch(0.62 0.22 25);
+  --color-threat-dim: oklch(0.62 0.22 25 / 0.15);
+  --color-ai: oklch(0.72 0.18 280);
+  --color-ai-dim: oklch(0.72 0.18 280 / 0.15);
+  --color-muted: oklch(0.45 0.004 240);
+  --color-muted-dim: oklch(0.45 0.004 240 / 0.15);
+  --color-text: oklch(0.92 0.005 240);
+  --color-text-subtle: oklch(0.60 0.005 240);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface-0);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Print: show only dissemination card */
+@media print {
+  body > * { display: none !important; }
+  #dissemination-root { display: block !important; }
+}
