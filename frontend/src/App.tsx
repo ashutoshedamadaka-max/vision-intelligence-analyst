@@ -14,7 +14,6 @@ import { AggregateSummary } from '@/components/AggregateSummary';
 import { FilterBar } from '@/components/FilterBar';
 import { analyzeImage } from '@/lib/api';
 import type { Detection, DetectionMode, AnalysisResult, BBox, ConfidenceBand } from '@/lib/types';
-import { getBand } from '@/lib/types';
 
 type Phase = 'idle' | 'uploading' | 'analyzing' | 'review' | 'complete';
 
@@ -115,11 +114,6 @@ export default function App() {
     setState(INITIAL);
   };
 
-  const visibleDetections = state.detections.filter((d) => {
-    if (state.filterClass !== 'all' && d.label !== state.filterClass) return false;
-    if (state.filterBand && d.band !== state.filterBand) return false;
-    return true;
-  });
 
   return (
     <div className="min-h-screen" style={{ background: 'oklch(0.08 0.005 240)', color: 'oklch(0.92 0.005 240)' }}>

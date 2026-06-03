@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Check, X, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import type { Detection, VEHICLE_CLASSES } from '@/lib/types';
+import type { Detection } from '@/lib/types';
 import { bandColor, VEHICLE_CLASSES as CLASSES } from '@/lib/types';
 
 interface Props {
