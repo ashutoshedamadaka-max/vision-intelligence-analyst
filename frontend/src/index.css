@@ -1,24 +1,33 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @theme {
-  /* Typography */
   --font-serif: 'Instrument Serif', serif;
   --font-sans: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
-  /* Surface palette — near-black defense UI */
+  /* Surface palette */
   --color-surface-0: oklch(0.08 0.005 240);
   --color-surface-1: oklch(0.11 0.006 240);
   --color-surface-2: oklch(0.15 0.007 240);
   --color-border: oklch(0.25 0.005 240 / 0.5);
 
-  /* Semantic intent colors */
-  --color-confirmed: oklch(0.65 0.14 160);
-  --color-confirmed-dim: oklch(0.65 0.14 160 / 0.15);
-  --color-review: oklch(0.75 0.16 75);
-  --color-review-dim: oklch(0.75 0.16 75 / 0.15);
-  --color-threat: oklch(0.62 0.22 25);
-  --color-threat-dim: oklch(0.62 0.22 25 / 0.15);
+  /* Confidence bands */
+  --color-hi: #34d399;
+  --color-hi-dim: rgba(52, 211, 153, 0.14);
+  --color-rev: #f6b73c;
+  --color-rev-dim: rgba(246, 183, 60, 0.14);
+  --color-lo: #fb6a78;
+  --color-lo-dim: rgba(251, 106, 120, 0.14);
+
+  /* Legacy aliases kept for components not yet migrated */
+  --color-confirmed: #34d399;
+  --color-confirmed-dim: rgba(52, 211, 153, 0.14);
+  --color-review: #f6b73c;
+  --color-review-dim: rgba(246, 183, 60, 0.14);
+  --color-threat: #fb6a78;
+  --color-threat-dim: rgba(251, 106, 120, 0.14);
+
   --color-ai: oklch(0.72 0.18 280);
   --color-ai-dim: oklch(0.72 0.18 280 / 0.15);
   --color-muted: oklch(0.45 0.004 240);
@@ -27,9 +36,7 @@
   --color-text-subtle: oklch(0.60 0.005 240);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -40,16 +47,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.font-serif {
-  font-family: var(--font-serif);
-}
+.font-serif { font-family: var(--font-serif); }
+.font-mono  { font-family: var(--font-mono); }
 
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Print: show only dissemination card */
+/* Print */
 @media print {
   body > * { display: none !important; }
   #dissemination-root { display: block !important; }

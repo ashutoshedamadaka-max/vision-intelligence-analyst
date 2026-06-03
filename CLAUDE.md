@@ -3,15 +3,24 @@
 ## Why this project exists
 This is a **portfolio piece** to land a **Product Manager** interview at **Auric AI**, a defense
 startup building an AI vision-intelligence platform that detects/classifies high-value objects
-(vehicles, aircraft, ships, etc.) in satellite and drone imagery for military analysts.
+in satellite and drone imagery for military analysts.
 
 The goal is NOT to build the world's best object detector. It is to demonstrate **product-manager
 craft**: workflow design, trust/usability under pressure, and turning raw AI detections into
-*intelligence an analyst can trust within minutes*. The detection model is just one node in a
-larger workflow — the workflow and the trust layer are the hero.
+*intelligence an analyst can trust within minutes*.
 
-> One-line thesis to keep in mind: "I designed a trustworthy analyst experience around an
-> imperfect model" beats "I trained an accurate model."
+> One-line thesis: "I designed a trustworthy analyst experience around fine-grained vehicle
+> detection — vehicles are the mobile assets, mobility makes intelligence perishable, which
+> is why time-to-insight in minutes is the headline metric."
+
+## Product thesis (updated)
+The product is repositioned from "detect all military objects" to **fine-grained vehicle
+detection & classification for overhead imagery**. Rationale carried through UI and PRD:
+- Vehicles = mobile assets; mobility makes intelligence perishable
+- Classification matters as much as detection — "Truck 88% / APC 9% / Bus 3%" is a
+  fundamentally different product from a binary yes/no detection
+- Time-to-insight is the headline success metric
+- Demo runs on public/civilian overhead imagery (xView / DOTA); always show the disclaimer
 
 ## The product: an analyst workflow tool
 Build a working web prototype that walks through the analyst journey end-to-end (this is Auric's

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import type { Detection } from '@/lib/types';
+import type { Detection, ConfidenceBand } from '@/lib/types';
+import { bandColor } from '@/lib/types';
 
 interface Props {
   detections: Detection[];
@@ -8,9 +9,10 @@ interface Props {
 }
 
 function priority(d: Detection): number {
-  if (d.status === 'rejected') return 900 + (1 - d.confidence);
-  if (d.status === 'accepted' || d.status === 'relabeled') return 500 + (1 - d.confidence);
-  return (1 - d.confidence) * 100;
+  if (d.status === 'rejected') return 900;
+  if (d.status === 'accepted' || d.status === 'relabeled') return 500;
+  // pending: sort by uncertainty (lowest confidence first)
+  return (1 - d.detectionConfidence) * 100;
 }
 
 export function TriagePanel({ detections, activeId, onSelect }: Props) {
@@ -21,33 +23,38 @@ export function TriagePanel({ detections, activeId, onSelect }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-3 pt-3 pb-2 border-b border-[color:var(--color-border)]">
-        <h2 className="font-serif text-base font-medium text-[color:var(--color-text)]">Triage Queue</h2>
-        <p className="text-[10px] text-[color:var(--color-muted)] mt-0.5">Sort: Uncertainty desc.</p>
-
-        <div className="flex gap-2 mt-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[color:var(--color-review)] text-[color:var(--color-review)]">
+      <div className="px-3 pt-3 pb-2" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.09)' }}>
+        <h2 className="font-serif text-lg font-medium">Triage Queue</h2>
+        <p className="font-mono text-[10px] mt-0.5" style={{ color: 'oklch(0.45 0.004 240)' }}>
+          SORT: UNCERTAINTY ↓
+        </p>
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <span className="font-mono text-[10.5px] px-2.5 py-0.5 rounded-full border" style={{ color: '#f6b73c', borderColor: 'rgba(246,183,60,0.4)' }}>
             {pending} pending
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[color:var(--color-confirmed)] text-[color:var(--color-confirmed)]">
+          <span className="font-mono text-[10.5px] px-2.5 py-0.5 rounded-full border" style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)' }}>
             {confirmed} confirmed
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full border border-[color:var(--color-muted)] text-[color:var(--color-muted)]">
+          <span className="font-mono text-[10.5px] px-2.5 py-0.5 rounded-full border" style={{ color: '#fb6a78', borderColor: 'rgba(251,106,120,0.4)' }}>
             {rejected} rejected
           </span>
         </div>
       </div>
 
-      {/* Rows */}
       <div className="flex-1 overflow-y-auto">
-        {sorted.map((d, i) => {
+        {sorted.map((d) => {
           const isActive = d.id === activeId;
-          let dotColor = 'var(--color-review)';
-          if (d.status === 'accepted' || d.status === 'relabeled') dotColor = 'var(--color-confirmed)';
-          else if (d.status === 'rejected') dotColor = 'var(--color-muted)';
-          else if (d.confidence < 0.60) dotColor = 'var(--color-threat)';
-          else if (d.confidence >= 0.80) dotColor = 'var(--color-confirmed)';
+          const col = d.status === 'accepted' || d.status === 'relabeled'
+            ? '#34d399'
+            : d.status === 'rejected'
+            ? '#fb6a78'
+            : bandColor(d.band);
+
+          const bandTag: Record<ConfidenceBand, string> = {
+            hi: '', rev: 'REVIEW', lo: 'LOW',
+          };
+          const tag = d.status === 'pending' ? bandTag[d.band] : '';
+          const pct = Math.round(d.detectionConfidence * 100);
 
           return (
             <button
@@ -57,44 +64,52 @@ export function TriagePanel({ detections, activeId, onSelect }: Props) {
                 document.getElementById(d.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
               className={cn(
-                'w-full text-left px-3 py-2.5 flex items-center gap-2.5 border-b border-[color:var(--color-border)] transition-colors',
-                isActive
-                  ? 'bg-[color:var(--color-surface-2)] border-l-2 border-l-[color:var(--color-ai)]'
-                  : 'hover:bg-[color:var(--color-surface-1)]',
+                'w-full text-left px-3 py-2.5 flex items-center gap-2.5 transition-colors',
+                isActive ? 'border-l-2' : 'hover:opacity-80'
               )}
+              style={{
+                borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+                background: isActive ? 'rgba(255,255,255,0.04)' : 'transparent',
+                borderLeftColor: isActive ? 'oklch(0.72 0.18 280)' : 'transparent',
+              }}
             >
-              {/* Priority badge (pending only) */}
-              <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-medium"
-                style={{
-                  background: d.status === 'pending' ? `color-mix(in oklch, ${dotColor} 15%, transparent)` : 'transparent',
-                  color: d.status === 'pending' ? dotColor : 'transparent',
-                  border: d.status === 'pending' ? `1px solid ${dotColor}` : 'none',
-                }}
+              {/* Seq number */}
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 font-mono text-[10px]"
+                style={{ color: col, border: `1px solid ${col}` }}
               >
-                {d.status === 'pending' ? i + 1 : ''}
+                {d.seq}
               </span>
 
-              {/* Label + confidence */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[color:var(--color-text)] truncate">
+                  <span className="text-[13px] font-medium truncate" style={{ color: 'oklch(0.92 0.005 240)' }}>
                     {d.relabeledTo ?? d.label}
+                    {d.source === 'manual' && (
+                      <span className="ml-1.5 font-mono text-[9px]" style={{ color: 'oklch(0.72 0.18 280)' }}>MANUAL</span>
+                    )}
                   </span>
-                  <span className="tabular text-xs shrink-0" style={{ color: dotColor }}>
-                    {(d.confidence * 100).toFixed(0)}%
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {tag && (
+                      <span
+                        className="font-mono text-[8.5px] tracking-[0.08em] uppercase px-1.5 py-0.5 rounded"
+                        style={{
+                          color: col,
+                          background: d.band === 'rev' ? 'rgba(246,183,60,0.14)' : 'rgba(251,106,120,0.14)',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    )}
+                    <span className="font-mono text-[12px] tabular" style={{ color: col }}>{pct}%</span>
+                  </div>
                 </div>
-                {/* Mini bar */}
-                <div className="mt-1 h-0.5 w-full bg-[color:var(--color-surface-2)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{ width: `${d.confidence * 100}%`, background: dotColor }}
-                  />
+                <div className="mt-1 h-[3px] rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: col }} />
                 </div>
               </div>
 
-              {/* Status dot */}
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dotColor }} />
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: col }} />
             </button>
           );
         })}
