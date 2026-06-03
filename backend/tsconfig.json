@@ -9,5 +9,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["api", "lib"]
+  "include": ["api", "lib"],
+  "exclude": ["server.ts"]
 }
