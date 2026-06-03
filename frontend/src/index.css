@@ -57,6 +57,7 @@ body {
 
 /* Print */
 @media print {
-  body > * { display: none !important; }
-  #dissemination-root { display: block !important; }
+  body * { visibility: hidden; }
+  #dissemination-root, #dissemination-root * { visibility: visible; }
+  #dissemination-root { position: absolute; left: 0; top: 0; width: 100%; }
 }
