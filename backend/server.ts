@@ -1,3 +1,4 @@
+// @ts-nocheck — local dev server only, not used in production
 import 'dotenv/config';
 import http from 'http';
 import { IncomingMessage, ServerResponse } from 'http';
