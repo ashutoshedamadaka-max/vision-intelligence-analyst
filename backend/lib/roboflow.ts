@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Detection } from './types';
 
 interface RoboflowPrediction {
-  x: number;       // center x (relative 0-1 or absolute px — depends on API version)
-  y: number;       // center y
+  x: number;
+  y: number;
   width: number;
   height: number;
   confidence: number;
@@ -27,7 +27,6 @@ export async function analyzeWithRoboflow(
     throw new Error('ROBOFLOW_API_KEY and ROBOFLOW_MODEL_ID must be set');
   }
 
-  // Strip the data URL prefix to get raw base64
   const base64 = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
 
   const url = `https://detect.roboflow.com/${modelId}?api_key=${apiKey}&name=${encodeURIComponent(filename)}`;
@@ -46,8 +45,6 @@ export async function analyzeWithRoboflow(
   const data: RoboflowResponse = await res.json();
   const predictions = data.predictions ?? [];
 
-  // Roboflow returns center-based coords (absolute pixels).
-  // Convert to top-left origin: x = cx - w/2, y = cy - h/2
   return predictions.map((p) => ({
     id: uuidv4(),
     label: formatLabel(p.class),
@@ -59,12 +56,12 @@ export async function analyzeWithRoboflow(
       h: Math.round(p.height),
     },
     status: 'pending' as const,
-    notes: `Detected by aerial-trained YOLOv8 model (${modelId}).`,
+    notes: `Detected by vehicle detection model (${modelId}).`,
     provenance: {
       sourceFile: filename,
       timestamp: new Date().toISOString(),
       sensorType,
-      modelVersion: `roboflow-yolov8/${modelId}`,
+      modelVersion: `roboflow/${modelId}`,
     },
   }));
 }

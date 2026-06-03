@@ -23,6 +23,7 @@ interface AppState {
   frozenAt: number | null;
   activeId: string | null;
   error: string | null;
+  signOffAt: number | null;
 }
 
 const INITIAL: AppState = {
@@ -36,6 +37,7 @@ const INITIAL: AppState = {
   frozenAt: null,
   activeId: null,
   error: null,
+  signOffAt: null,
 };
 
 export default function App() {
@@ -55,7 +57,7 @@ export default function App() {
 
     try {
       const result = await analyzeImage(state.file, state.mode);
-      setPartial({ phase: 'review', result, detections: result.detections });
+      setPartial({ phase: 'review', result, detections: result.detections, frozenAt: Date.now() });
     } catch (err) {
       setPartial({
         phase: 'uploading',
@@ -80,7 +82,7 @@ export default function App() {
   const allReviewed =
     state.detections.length > 0 && state.detections.every((d) => d.status !== 'pending');
 
-  const handleSignOff = () => setPartial({ phase: 'complete', frozenAt: Date.now() });
+  const handleSignOff = () => setPartial({ phase: 'complete', frozenAt: Date.now(), signOffAt: Date.now() });
 
   const handleReset = () => {
     if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
@@ -102,7 +104,7 @@ export default function App() {
             </p>
           </div>
           {(state.phase === 'analyzing' || state.phase === 'review' || state.phase === 'complete') && (
-            <TimeToInsightTimer startedAt={state.startedAt} frozenAt={state.frozenAt} />
+            <TimeToInsightTimer startedAt={state.startedAt} frozenAt={state.frozenAt} phase={state.phase} />
           )}
         </div>
 
@@ -178,9 +180,17 @@ export default function App() {
               </div>
 
               {state.detections.length === 0 ? (
-                <p className="text-sm text-[color:var(--color-muted)] text-center py-8">
-                  No objects detected. Try a different image or detection model.
-                </p>
+                <div className="flex flex-col items-center gap-4 py-10">
+                  <p className="text-sm text-[color:var(--color-muted)] text-center">
+                    No objects detected. Try a different image or switch to YOLO mode.
+                  </p>
+                  <button
+                    onClick={handleReset}
+                    className="px-6 py-2 rounded-lg text-sm font-medium border border-[color:var(--color-border)] text-[color:var(--color-text-subtle)] hover:opacity-80 transition-opacity"
+                  >
+                    Upload a different image
+                  </button>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {state.detections.map((d) => (
@@ -217,8 +227,8 @@ export default function App() {
           <DisseminationCard
             detections={state.detections}
             analysisId={state.result.analysisId}
-            timeToInsightMs={state.frozenAt! - state.startedAt}
-            signOffAt={new Date(state.frozenAt!).toISOString()}
+            timeToInsightMs={(state.signOffAt ?? state.frozenAt)! - state.startedAt}
+            signOffAt={new Date((state.signOffAt ?? state.frozenAt)!).toISOString()}
             mode={state.mode}
             onReset={handleReset}
           />

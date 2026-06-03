@@ -40,7 +40,7 @@ export async function analyzeWithOpenAI(
   sensorType: string
 ): Promise<Detection[]> {
   const response = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-4o',
     messages: [
       {
         role: 'user',
@@ -55,12 +55,19 @@ export async function analyzeWithOpenAI(
 
   const content = response.choices[0]?.message?.content ?? '[]';
 
+  console.log('OpenAI raw response:', content.slice(0, 500));
+
   let raw: RawDetection[];
   try {
-    raw = JSON.parse(content.trim());
-    if (!Array.isArray(raw)) raw = [];
-  } catch {
-    console.error('OpenAI response parse failed:', content);
+    // Strip markdown code fences if model wraps in ```json ... ```
+    const cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    raw = JSON.parse(cleaned);
+    if (!Array.isArray(raw)) {
+      console.error('OpenAI response is not an array:', cleaned);
+      raw = [];
+    }
+  } catch (e) {
+    console.error('OpenAI response parse failed:', e, '\nRaw content:', content);
     raw = [];
   }
 

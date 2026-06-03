@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   startedAt: number;
   frozenAt: number | null;
+  phase?: string;
 }
 
 function formatElapsed(ms: number): string {
@@ -20,7 +21,7 @@ function formatElapsed(ms: number): string {
   return `${hh}:${mm}:${ss}.${tenths}`;
 }
 
-export function TimeToInsightTimer({ startedAt, frozenAt }: Props) {
+export function TimeToInsightTimer({ startedAt, frozenAt, phase }: Props) {
   const [elapsed, setElapsed] = useState(frozenAt ? frozenAt - startedAt : Date.now() - startedAt);
   const frozen = frozenAt !== null;
 
@@ -38,7 +39,7 @@ export function TimeToInsightTimer({ startedAt, frozenAt }: Props) {
   return (
     <div className="flex flex-col items-end gap-1">
       <span className="text-[10px] uppercase tracking-widest text-[color:var(--color-muted)] font-medium">
-        {frozen ? 'Time to Insight' : 'Analysis in Progress'}
+        {!frozen ? 'Analysis in Progress' : phase === 'complete' ? 'Time to Insight' : 'Detection Time'}
       </span>
       <span
         className={cn('font-serif tabular text-3xl font-medium transition-all duration-300')}
