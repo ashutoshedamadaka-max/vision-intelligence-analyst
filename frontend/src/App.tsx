@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ImageUploader } from '@/components/ImageUploader';
-import { ModelToggle } from '@/components/ModelToggle';
 import { WorkflowSteps } from '@/components/WorkflowSteps';
 import { DetectionCanvas } from '@/components/DetectionCanvas';
 import { DetectionCard } from '@/components/DetectionCard';
@@ -36,7 +35,7 @@ interface AppState {
 }
 
 const INITIAL: AppState = {
-  phase: 'idle', file: null, previewUrl: null, mode: 'openai',
+  phase: 'idle', file: null, previewUrl: null, mode: 'yolo',
   result: null, detections: [], startedAt: 0, frozenAt: null, signOffAt: null,
   activeId: null, error: null, drawMode: false, filterClass: 'all',
   filterBand: null, showHeatmap: false,
@@ -147,7 +146,6 @@ export default function App() {
         {(state.phase === 'idle' || state.phase === 'uploading') && (
           <div className="flex flex-col gap-5 max-w-xl mx-auto w-full">
             <ImageUploader onFileSelect={handleFileSelect} />
-            <ModelToggle mode={state.mode} onChange={(m) => setPartial({ mode: m })} disabled={state.phase === 'idle'} />
             {state.phase === 'uploading' && (
               <button
                 onClick={handleAnalyze}
@@ -166,7 +164,7 @@ export default function App() {
             <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
               style={{ borderColor: 'oklch(0.72 0.18 280)', borderTopColor: 'transparent' }} />
             <p className="text-sm" style={{ color: 'oklch(0.60 0.005 240)' }}>
-              Running {state.mode === 'yolo' ? 'YOLO vehicle detection' : 'GPT-4o vision analysis'}…
+              Running YOLO aerial vehicle detection…
             </p>
           </div>
         )}
