@@ -11,9 +11,20 @@ export function ImageUploader({ onFileSelect }: Props) {
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const handleFile = useCallback(
     (file: File) => {
-      if (!file.type.startsWith('image/')) return;
+      const blocked = ['image/avif', 'image/webp', 'image/heic', 'image/heif'];
+      if (blocked.includes(file.type)) {
+        setError(`${file.type.split('/')[1].toUpperCase()} format not supported. Please use JPEG, PNG, or TIFF.`);
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload an image file.');
+        return;
+      }
+      setError(null);
       const url = URL.createObjectURL(file);
       setPreview(url);
       onFileSelect(file, url);
@@ -73,7 +84,7 @@ export function ImageUploader({ onFileSelect }: Props) {
                 Drop overhead image or click to upload
               </p>
               <p className="text-xs text-[color:var(--color-muted)] mt-1">
-                JPEG, PNG, TIFF — max 5 MB
+                JPEG, PNG, TIFF only — max 5 MB
               </p>
             </div>
           </div>
@@ -85,10 +96,14 @@ export function ImageUploader({ onFileSelect }: Props) {
         Production would use proprietary sensor data.
       </p>
 
+      {error && (
+        <p className="mt-2 text-xs text-center" style={{ color: '#fb6a78' }}>{error}</p>
+      )}
+
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/tiff"
         className="hidden"
         onChange={onChange}
       />
