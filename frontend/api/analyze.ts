@@ -114,8 +114,10 @@ async function analyzeWithRoboflow(base64DataUrl: string, filename: string, sens
   const apiKey = process.env.ROBOFLOW_API_KEY!;
   const modelId = process.env.ROBOFLOW_MODEL_ID!;
   const base64 = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
+  // Send as binary to avoid base64 + → space corruption in x-www-form-urlencoded
+  const imageBuffer = Buffer.from(base64, 'base64');
   const res = await fetch(`https://detect.roboflow.com/${modelId}?api_key=${apiKey}&name=${encodeURIComponent(filename)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: base64,
+    method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: imageBuffer,
   });
   if (!res.ok) throw new Error(`Roboflow API error ${res.status}: ${await res.text()}`);
   const data = await res.json() as { predictions?: Array<{ x: number; y: number; width: number; height: number; confidence: number; class: string; }> };
