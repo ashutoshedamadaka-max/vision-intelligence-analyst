@@ -1,3 +1,4 @@
+// @ts-nocheck — dead code, not used in current routing (OpenAI path removed)
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import type { Detection } from './types';

@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Detection } from './types';
 
+const GSD_M = 0.31; // ground sample distance in metres per pixel (demo default)
+
 interface RoboflowPrediction {
   x: number;
   y: number;
@@ -13,6 +15,12 @@ interface RoboflowPrediction {
 interface RoboflowResponse {
   predictions: RoboflowPrediction[];
   image?: { width: number; height: number };
+}
+
+function getBand(conf: number): 'hi' | 'rev' | 'lo' {
+  if (conf >= 0.85) return 'hi';
+  if (conf >= 0.60) return 'rev';
+  return 'lo';
 }
 
 export async function analyzeWithRoboflow(
@@ -44,26 +52,41 @@ export async function analyzeWithRoboflow(
 
   const data: RoboflowResponse = await res.json();
   const predictions = data.predictions ?? [];
+  const ts = new Date().toISOString();
 
-  return predictions.map((p) => ({
-    id: uuidv4(),
-    label: formatLabel(p.class),
-    confidence: Math.max(0, Math.min(1, p.confidence)),
-    bbox: {
-      x: Math.round(p.x - p.width / 2),
-      y: Math.round(p.y - p.height / 2),
-      w: Math.round(p.width),
-      h: Math.round(p.height),
-    },
-    status: 'pending' as const,
-    notes: `Detected by vehicle detection model (${modelId}).`,
-    provenance: {
-      sourceFile: filename,
-      timestamp: new Date().toISOString(),
-      sensorType,
-      modelVersion: `roboflow/${modelId}`,
-    },
-  }));
+  return predictions.map((p, i) => {
+    const conf = Math.max(0, Math.min(1, p.confidence));
+    const w = Math.round(p.width);
+    const h = Math.round(p.height);
+    const label = formatLabel(p.class);
+
+    return {
+      id: uuidv4(),
+      seq: i + 1,
+      label,
+      detectionConfidence: conf,
+      classification: [{ label, pct: Math.round(conf * 100) }],
+      band: getBand(conf),
+      bbox: {
+        x: Math.round(p.x - p.width / 2),
+        y: Math.round(p.y - p.height / 2),
+        w,
+        h,
+        rot: 0,
+      },
+      heading: null,
+      estLength: `~${(w * GSD_M).toFixed(1)} m`,
+      manual: false,
+      status: 'pending' as const,
+      notes: `Top class only · yolo-world-aerial · open-source`,
+      provenance: {
+        sourceFile: filename,
+        timestamp: ts,
+        sensorType,
+        modelVersion: 'yolo-world-aerial · open-source',
+      },
+    };
+  });
 }
 
 function formatLabel(raw: string): string {

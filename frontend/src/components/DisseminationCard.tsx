@@ -1,12 +1,11 @@
 import { Printer, RefreshCw } from 'lucide-react';
-import type { Detection, DetectionMode } from '@/lib/types';
+import type { Detection } from '@/lib/types';
 
 interface Props {
   detections: Detection[];
   analysisId: string;
   timeToInsightMs: number;
   signOffAt: string;
-  mode: DetectionMode;
   onReset: () => void;
 }
 
@@ -22,8 +21,8 @@ function formatTimestamp(iso: string): string {
   catch { return iso; }
 }
 
-export function DisseminationCard({ detections, analysisId, timeToInsightMs, signOffAt, mode, onReset }: Props) {
-  const confirmed = detections.filter((d) => d.status === 'accepted' || d.status === 'relabeled');
+export function DisseminationCard({ detections, analysisId, timeToInsightMs, signOffAt, onReset }: Props) {
+  const confirmed = detections.filter((d) => d.status === 'confirmed' || d.status === 'relabeled' || d.manual);
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
@@ -61,7 +60,7 @@ export function DisseminationCard({ detections, analysisId, timeToInsightMs, sig
               Analyst sign-off: {formatTimestamp(signOffAt)}
             </p>
             <p className="font-mono text-xs" style={{ color: 'oklch(0.45 0.004 240)' }}>
-              Model: {mode === 'yolo' ? 'YOLO Aerial (Roboflow)' : 'gpt-4o-vision-v1'}
+              Model: yolo-world-aerial · open-source
             </p>
           </div>
           <div className="text-right">

@@ -4,19 +4,17 @@ import { cn } from '@/lib/utils';
 interface Props {
   filterClass: string;
   filterBand: ConfidenceBand | null;
-  showHeatmap: boolean;
   onClassChange: (cls: string) => void;
   onBandChange: (band: ConfidenceBand | null) => void;
-  onHeatmapToggle: () => void;
 }
 
 const BAND_CONFIG: { band: ConfidenceBand; label: string; color: string; dimColor: string }[] = [
-  { band: 'hi', label: 'High ≥85%', color: '#34d399', dimColor: 'rgba(52,211,153,0.14)' },
+  { band: 'hi',  label: 'High ≥85%',    color: '#34d399', dimColor: 'rgba(52,211,153,0.14)' },
   { band: 'rev', label: 'Review 60–84%', color: '#f6b73c', dimColor: 'rgba(246,183,60,0.14)' },
-  { band: 'lo', label: 'Low <60%', color: '#fb6a78', dimColor: 'rgba(251,106,120,0.14)' },
+  { band: 'lo',  label: 'Low <60%',     color: '#fb6a78', dimColor: 'rgba(251,106,120,0.14)' },
 ];
 
-export function FilterBar({ filterClass, filterBand, showHeatmap, onClassChange, onBandChange, onHeatmapToggle }: Props) {
+export function FilterBar({ filterClass, filterBand, onClassChange, onBandChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-4 mt-3">
       {/* Class filter */}
@@ -24,7 +22,7 @@ export function FilterBar({ filterClass, filterBand, showHeatmap, onClassChange,
         <span className="font-mono text-[10px] tracking-[0.14em] uppercase" style={{ color: 'oklch(0.45 0.004 240)' }}>
           Class
         </span>
-        {['All', 'Sedan', 'SUV', 'Truck', 'Unclassified Vehicle'].map((cls) => {
+        {['All', 'Car', 'Truck', 'SUV', 'Unclassified'].map((cls) => {
           const key = cls === 'All' ? 'all' : cls;
           const active = filterClass === key;
           return (
@@ -69,21 +67,6 @@ export function FilterBar({ filterClass, filterBand, showHeatmap, onClassChange,
           );
         })}
       </div>
-
-      <div className="w-px h-5 self-stretch" style={{ background: 'rgba(255,255,255,0.09)' }} />
-
-      {/* Heatmap toggle */}
-      <button
-        onClick={onHeatmapToggle}
-        className={cn(
-          'font-mono text-[11px] border rounded-md px-3 py-1 transition-all',
-          showHeatmap
-            ? 'border-[color:var(--color-ai)] text-[color:var(--color-ai)] bg-[color:var(--color-ai-dim)]'
-            : 'border-white/10 text-white/50 hover:text-white/80'
-        )}
-      >
-        ◦ Density Heatmap
-      </button>
     </div>
   );
 }

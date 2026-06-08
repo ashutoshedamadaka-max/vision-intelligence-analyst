@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Detection, BBox } from '@/lib/types';
 import { bandColor } from '@/lib/types';
-import { VEHICLE_CLASSES } from '@/lib/types';
+import { VEHICLE_TAXONOMY } from '@/lib/types';
 
 interface DrawState {
   startX: number; startY: number;
@@ -22,6 +22,7 @@ interface Props {
   activeId: string | null;
   drawMode: boolean;
   showHeatmap: boolean;
+  showBoxes: boolean;
   filterClass: string;
   filterBand: string | null;
   onBoxClick: (id: string) => void;
@@ -70,26 +71,32 @@ function drawOBB(
       ctx.stroke();
     }
 
-    // Heading arrow
-    const headRad = (d.heading - 90) * (Math.PI / 180);
-    const arrowLen = h / 2 + 14;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(Math.cos(headRad) * arrowLen, Math.sin(headRad) * arrowLen);
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(Math.cos(headRad) * arrowLen, Math.sin(headRad) * arrowLen, 2.4, 0, Math.PI * 2);
-    ctx.fillStyle = col;
-    ctx.fill();
+    // Heading arrow (only when heading is known)
+    if (d.heading != null) {
+      const headRad = (d.heading - 90) * (Math.PI / 180);
+      const arrowLen = h / 2 + 14;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(headRad) * arrowLen, Math.sin(headRad) * arrowLen);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(Math.cos(headRad) * arrowLen, Math.sin(headRad) * arrowLen, 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+    }
   } else {
-    // Standard oriented box
+    // Standard oriented box — dashed for analyst-defined, solid for AI
     ctx.strokeStyle = col;
     ctx.lineWidth = d.band === 'rev' ? 1.8 : 1.4;
     ctx.fillStyle = `${col}08`;
     ctx.fillRect(-w / 2, -h / 2, w, h);
+    if (d.manual) {
+      ctx.setLineDash([5, 3]);
+    }
     ctx.strokeRect(-w / 2, -h / 2, w, h);
+    ctx.setLineDash([]);
   }
 
   if (d.status === 'rejected') {
@@ -125,7 +132,7 @@ function drawOBB(
 }
 
 export function DetectionCanvas({
-  imageUrl, detections, activeId, drawMode, showHeatmap,
+  imageUrl, detections, activeId, drawMode, showHeatmap, showBoxes,
   filterClass, filterBand, onBoxClick, onManualAdd,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -133,7 +140,7 @@ export function DetectionCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawRef = useRef<DrawState>({ startX: 0, startY: 0, currentX: 0, currentY: 0, active: false });
   const [dialog, setDialog] = useState<ManualDialogState>({ visible: false, bbox: null, screenX: 0, screenY: 0 });
-  const [dialogLabel, setDialogLabel] = useState<string>(VEHICLE_CLASSES[0]);
+  const [dialogLabel, setDialogLabel] = useState<string>(VEHICLE_TAXONOMY[0]);
   const [dialogNotes, setDialogNotes] = useState('');
 
   const isDimmed = useCallback((d: Detection) => {
@@ -156,7 +163,7 @@ export function DetectionCanvas({
     const scaleY = canvas.height / (img.naturalHeight || canvas.height);
 
     // Heatmap overlay
-    if (showHeatmap && detections.length > 0) {
+    if (showHeatmap && detections.length > 0 && showBoxes) {
       for (const d of detections) {
         const cx = (d.bbox.x + d.bbox.w / 2) * scaleX;
         const cy = (d.bbox.y + d.bbox.h / 2) * scaleY;
@@ -173,8 +180,10 @@ export function DetectionCanvas({
     }
 
     // Detection boxes
-    for (const d of detections) {
-      drawOBB(ctx, d, scaleX, scaleY, d.id === activeId, isDimmed(d));
+    if (showBoxes) {
+      for (const d of detections) {
+        drawOBB(ctx, d, scaleX, scaleY, d.id === activeId, isDimmed(d));
+      }
     }
 
     // Draw rubber-band while dragging
@@ -184,15 +193,15 @@ export function DetectionCanvas({
       const y = Math.min(ds.startY, ds.currentY);
       const w = Math.abs(ds.currentX - ds.startX);
       const h = Math.abs(ds.currentY - ds.startY);
-      ctx.strokeStyle = 'oklch(0.72 0.18 280)';
+      ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 3]);
       ctx.strokeRect(x, y, w, h);
-      ctx.fillStyle = 'oklch(0.72 0.18 280 / 0.08)';
+      ctx.fillStyle = 'rgba(56,189,248,0.08)';
       ctx.fillRect(x, y, w, h);
       ctx.setLineDash([]);
     }
-  }, [detections, activeId, showHeatmap, isDimmed]);
+  }, [detections, activeId, showHeatmap, showBoxes, isDimmed]);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -275,10 +284,10 @@ export function DetectionCanvas({
 
   const confirmManual = () => {
     if (dialog.bbox) {
-      onManualAdd(dialog.bbox, dialogLabel, dialogNotes);
+      onManualAdd(dialog.bbox, dialogLabel, '');
     }
     setDialog({ visible: false, bbox: null, screenX: 0, screenY: 0 });
-    setDialogLabel(VEHICLE_CLASSES[0]);
+    setDialogLabel(VEHICLE_TAXONOMY[0]);
     setDialogNotes('');
     drawAll();
   };
@@ -308,15 +317,15 @@ export function DetectionCanvas({
         <div
           className="absolute z-20 rounded-lg border p-3 shadow-xl flex flex-col gap-2"
           style={{
-            left: Math.min(dialog.screenX, (canvasRef.current?.width ?? 400) - 220),
+            left: Math.min(dialog.screenX, (canvasRef.current?.width ?? 400) - 200),
             top: dialog.screenY + 8,
-            width: 210,
-            background: 'oklch(0.11 0.006 240)',
-            borderColor: 'oklch(0.72 0.18 280)',
+            width: 192,
+            background: '#101013',
+            borderColor: 'rgba(255,255,255,0.09)',
           }}
         >
-          <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: 'oklch(0.72 0.18 280)' }}>
-            Add Detection
+          <div className="font-mono text-[9px] tracking-[0.14em] uppercase" style={{ color: 'oklch(0.45 0.004 240)' }}>
+            Define vehicle class
           </div>
           <select
             value={dialogLabel}
@@ -324,23 +333,17 @@ export function DetectionCanvas({
             className="w-full rounded px-2 py-1.5 text-[12px] border outline-none"
             style={{ background: 'oklch(0.08 0.005 240)', color: 'oklch(0.92 0.005 240)', borderColor: 'rgba(255,255,255,0.15)' }}
           >
-            {VEHICLE_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {VEHICLE_TAXONOMY.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input
-            placeholder="Optional notes…"
-            value={dialogNotes}
-            onChange={(e) => setDialogNotes(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') confirmManual(); if (e.key === 'Escape') setDialog({ visible: false, bbox: null, screenX: 0, screenY: 0 }); }}
-            className="w-full rounded px-2 py-1.5 text-[12px] border outline-none"
-            style={{ background: 'oklch(0.08 0.005 240)', color: 'oklch(0.92 0.005 240)', borderColor: 'rgba(255,255,255,0.15)' }}
-          />
           <div className="flex gap-2">
             <button
               onClick={confirmManual}
-              className="flex-1 py-1.5 rounded text-[12px] font-medium"
-              style={{ background: 'oklch(0.72 0.18 280)', color: 'white' }}
+              className="flex-1 py-1.5 rounded text-[12px] font-medium border transition-all"
+              style={{ color: '#38bdf8', borderColor: 'rgba(56,189,248,0.5)', background: 'rgba(56,189,248,0.12)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(56,189,248,0.2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(56,189,248,0.12)')}
             >
-              Add
+              Define
             </button>
             <button
               onClick={() => { setDialog({ visible: false, bbox: null, screenX: 0, screenY: 0 }); drawAll(); }}

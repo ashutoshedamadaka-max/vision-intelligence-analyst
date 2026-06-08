@@ -12,6 +12,7 @@ import { GeoStrip } from '@/components/GeoStrip';
 import { AggregateSummary } from '@/components/AggregateSummary';
 import { FilterBar } from '@/components/FilterBar';
 import { analyzeImage } from '@/lib/api';
+import { DetectionSequence } from '@/components/DetectionSequence';
 import type { Detection, DetectionMode, AnalysisResult, BBox, ConfidenceBand } from '@/lib/types';
 
 type Phase = 'idle' | 'uploading' | 'analyzing' | 'review' | 'complete';
@@ -22,6 +23,7 @@ interface AppState {
   previewUrl: string | null;
   mode: DetectionMode;
   result: AnalysisResult | null;
+  sequenceResult: AnalysisResult | null; // API result received but not yet proceeded to review
   detections: Detection[];
   startedAt: number;
   frozenAt: number | null;
@@ -32,13 +34,15 @@ interface AppState {
   filterClass: string;
   filterBand: ConfidenceBand | null;
   showHeatmap: boolean;
+  showBoxes: boolean;
 }
 
 const INITIAL: AppState = {
   phase: 'idle', file: null, previewUrl: null, mode: 'yolo',
-  result: null, detections: [], startedAt: 0, frozenAt: null, signOffAt: null,
+  result: null, sequenceResult: null, detections: [],
+  startedAt: 0, frozenAt: null, signOffAt: null,
   activeId: null, error: null, drawMode: false, filterClass: 'all',
-  filterBand: null, showHeatmap: false,
+  filterBand: null, showHeatmap: false, showBoxes: true,
 };
 
 export default function App() {
@@ -52,14 +56,19 @@ export default function App() {
   const handleAnalyze = async () => {
     if (!state.file) return;
     const startedAt = Date.now();
-    setPartial({ phase: 'analyzing', startedAt, error: null });
+    setPartial({ phase: 'analyzing', startedAt, error: null, sequenceResult: null });
     try {
-      const result = await analyzeImage(state.file, state.mode);
-      setPartial({ phase: 'review', result, detections: result.detections, frozenAt: Date.now() });
+      const result = await analyzeImage(state.file, 'yolo');
+      // Don't switch phase yet — pass result to DetectionSequence; user proceeds manually
+      setPartial({ sequenceResult: result, frozenAt: Date.now() });
     } catch (err) {
       setPartial({ phase: 'uploading', error: err instanceof Error ? err.message : 'Analysis failed.' });
     }
   };
+
+  const handleProceedToReview = useCallback((result: AnalysisResult) => {
+    setPartial({ phase: 'review', result, detections: result.detections });
+  }, []);
 
   const mutateDetection = useCallback((id: string, patch: Partial<Detection>) => {
     setState((s) => ({
@@ -68,28 +77,30 @@ export default function App() {
     }));
   }, []);
 
-  const handleAccept = (id: string) => mutateDetection(id, { status: 'accepted' });
+  const handleAccept = (id: string) => mutateDetection(id, { status: 'confirmed' });
   const handleReject = (id: string) => mutateDetection(id, { status: 'rejected' });
   const handleRelabel = (id: string, newLabel: string) =>
     mutateDetection(id, { status: 'relabeled', relabeledTo: newLabel, label: newLabel });
   const handleUndo = (id: string) => mutateDetection(id, { status: 'pending', relabeledTo: undefined });
 
-  const handleManualAdd = useCallback((bbox: BBox, label: string, notes: string) => {
+  const handleManualAdd = useCallback((bbox: BBox, label: string, _notes: string) => {
     setState((s) => {
       const seq = s.detections.length + 1;
+      const GSD_M = 0.31;
       const newDetection: Detection = {
         id: uuidv4(),
         seq,
         label,
         detectionConfidence: 1.0,
         classification: [{ label, pct: 100 }],
-        band: 'hi',
+        band: 'man',
         bbox,
-        heading: 0,
-        estLength: '~5 m',
+        heading: null,
+        estLength: `~${(bbox.w * GSD_M).toFixed(1)} m`,
         source: 'manual',
-        status: 'accepted',
-        notes: notes || 'Manually annotated by analyst.',
+        manual: true,
+        status: 'confirmed',
+        notes: 'Defined by analyst — missed by model. Provenance: manual.',
         provenance: {
           sourceFile: s.file?.name ?? 'unknown',
           timestamp: new Date().toISOString(),
@@ -106,7 +117,7 @@ export default function App() {
     });
   }, []);
 
-  const allReviewed = state.detections.length > 0 && state.detections.every((d) => d.status !== 'pending');
+  const allReviewed = state.detections.length > 0 && state.detections.every((d) => d.manual || d.status !== 'pending');
   const handleSignOff = () => setPartial({ phase: 'complete', frozenAt: Date.now(), signOffAt: Date.now() });
   const handleReset = () => {
     if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
@@ -159,14 +170,13 @@ export default function App() {
         )}
 
         {/* ── PHASE: analyzing ── */}
-        {state.phase === 'analyzing' && (
-          <div className="flex flex-col items-center gap-6 py-12">
-            <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
-              style={{ borderColor: 'oklch(0.72 0.18 280)', borderTopColor: 'transparent' }} />
-            <p className="text-sm" style={{ color: 'oklch(0.60 0.005 240)' }}>
-              Running YOLO aerial vehicle detection…
-            </p>
-          </div>
+        {state.phase === 'analyzing' && state.previewUrl && (
+          <DetectionSequence
+            previewUrl={state.previewUrl}
+            result={state.sequenceResult}
+            startedAt={state.startedAt}
+            onProceed={handleProceedToReview}
+          />
         )}
 
         {/* ── PHASE: review ── */}
@@ -183,33 +193,71 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
               {/* Image + controls */}
               <div>
-                {/* Image toolbar */}
-                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                  <span className="font-mono text-[11px] tracking-[0.1em]" style={{ color: 'oklch(0.45 0.004 240)' }}>
-                    FRAME · {state.detections.length} DETECTIONS
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPartial({ drawMode: !state.drawMode })}
-                      className="font-mono text-[11px] border rounded-md px-3 py-1 transition-all"
-                      style={{
-                        borderColor: state.drawMode ? 'oklch(0.72 0.18 280)' : 'rgba(255,255,255,0.1)',
-                        color: state.drawMode ? 'oklch(0.72 0.18 280)' : 'oklch(0.45 0.004 240)',
-                        background: state.drawMode ? 'oklch(0.72 0.18 280 / 0.15)' : 'transparent',
-                      }}
-                    >
-                      {state.drawMode ? '✕ Cancel Draw' : '+ Draw Detection'}
-                    </button>
-                  </div>
-                </div>
-
+                {/* Image card */}
                 <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.09)' }}>
+                  {/* Card header / toolbar */}
+                  <div className="flex items-center justify-between px-3.5 py-2.5" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
+                    <span className="font-mono text-[11px] tracking-[0.1em]" style={{ color: 'oklch(0.45 0.004 240)' }}>
+                      FRAME · {state.detections.length} DETECTIONS
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPartial({ drawMode: !state.drawMode })}
+                        className="font-mono text-[10.5px] border rounded px-2.5 py-1 transition-all"
+                        style={{
+                          borderColor: state.drawMode ? '#38bdf8' : 'rgba(255,255,255,0.09)',
+                          color: state.drawMode ? '#38bdf8' : 'oklch(0.45 0.004 240)',
+                          background: state.drawMode ? 'rgba(56,189,248,0.12)' : 'transparent',
+                        }}
+                      >
+                        {state.drawMode ? '✕ exit draw' : '⊕ Define vehicle'}
+                      </button>
+                      <button
+                        onClick={() => setPartial({ showHeatmap: !state.showHeatmap })}
+                        className="font-mono text-[10.5px] border rounded px-2.5 py-1 transition-all"
+                        style={{
+                          borderColor: state.showHeatmap ? 'oklch(0.72 0.18 280)' : 'rgba(255,255,255,0.09)',
+                          color: state.showHeatmap ? 'oklch(0.72 0.18 280)' : 'oklch(0.45 0.004 240)',
+                          background: state.showHeatmap ? 'oklch(0.72 0.18 280 / 0.14)' : 'transparent',
+                        }}
+                      >
+                        ◦ Density
+                      </button>
+                      <button
+                        onClick={() => setPartial({ showBoxes: !state.showBoxes })}
+                        className="font-mono text-[10.5px] border rounded px-2.5 py-1 transition-all"
+                        style={{
+                          borderColor: state.showBoxes ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.09)',
+                          color: state.showBoxes ? 'oklch(0.92 0.005 240)' : 'oklch(0.45 0.004 240)',
+                          background: state.showBoxes ? 'rgba(255,255,255,0.08)' : 'transparent',
+                        }}
+                      >
+                        ■ Boxes
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Draw-mode banner */}
+                  {state.drawMode && (
+                    <div className="flex items-center gap-2 px-3.5 py-2 font-mono text-[11px]" style={{ background: 'rgba(56,189,248,0.12)', borderBottom: '0.5px solid rgba(56,189,248,0.35)', color: '#bfe9ff', letterSpacing: '0.04em' }}>
+                      DRAW MODE · drag a box over a missed vehicle, then assign a class
+                      <button
+                        onClick={() => setPartial({ drawMode: false })}
+                        className="ml-auto opacity-70 transition-opacity hover:opacity-100"
+                        style={{ color: '#bfe9ff' }}
+                      >
+                        ✕ exit
+                      </button>
+                    </div>
+                  )}
+
                   <DetectionCanvas
                     imageUrl={state.previewUrl}
                     detections={state.detections}
                     activeId={state.activeId}
                     drawMode={state.drawMode}
                     showHeatmap={state.showHeatmap}
+                    showBoxes={state.showBoxes}
                     filterClass={state.filterClass}
                     filterBand={state.filterBand}
                     onBoxClick={(id) => setPartial({ activeId: id })}
@@ -222,10 +270,8 @@ export default function App() {
                 <FilterBar
                   filterClass={state.filterClass}
                   filterBand={state.filterBand}
-                  showHeatmap={state.showHeatmap}
                   onClassChange={(cls) => setPartial({ filterClass: cls })}
                   onBandChange={(band) => setPartial({ filterBand: band })}
-                  onHeatmapToggle={() => setPartial({ showHeatmap: !state.showHeatmap })}
                 />
               </div>
 
@@ -247,7 +293,7 @@ export default function App() {
                 </h2>
                 {state.result && (
                   <span className="font-mono text-[11px] tabular" style={{ color: 'oklch(0.45 0.004 240)' }}>
-                    Processed in {state.result.processingTimeMs}ms · gpt-4o-vision-v1
+                    Processed in {state.result.processingTimeMs}ms · yolo-world-aerial · open-source
                   </span>
                 )}
               </div>
@@ -304,7 +350,6 @@ export default function App() {
             analysisId={state.result.analysisId}
             timeToInsightMs={(state.signOffAt ?? state.frozenAt)! - state.startedAt}
             signOffAt={new Date((state.signOffAt ?? state.frozenAt)!).toISOString()}
-            mode={state.mode}
             onReset={handleReset}
           />
         )}

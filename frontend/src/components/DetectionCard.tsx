@@ -3,7 +3,7 @@ import { Check, X, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { Detection } from '@/lib/types';
-import { bandColor, VEHICLE_CLASSES as CLASSES } from '@/lib/types';
+import { bandColor, VEHICLE_TAXONOMY as CLASSES } from '@/lib/types';
 
 interface Props {
   detection: Detection;
@@ -16,11 +16,21 @@ interface Props {
   dimmed?: boolean;
 }
 
-function StatusBadge({ status }: { status: Detection['status'] }) {
+function StatusBadge({ status, manual }: { status: Detection['status']; manual?: boolean }) {
+  if (manual) {
+    return (
+      <span
+        className="font-mono text-[9px] tracking-[0.1em] uppercase px-2 py-0.5 rounded border"
+        style={{ color: '#38bdf8', borderColor: 'rgba(56,189,248,0.5)', background: 'rgba(56,189,248,0.12)' }}
+      >
+        ANALYST-DEFINED
+      </span>
+    );
+  }
   const map = {
-    pending: { label: 'Pending', color: '#f6b73c', bg: 'rgba(246,183,60,0.12)' },
-    accepted: { label: 'Confirmed', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-    rejected: { label: 'Rejected', color: '#fb6a78', bg: 'rgba(251,106,120,0.12)' },
+    pending:   { label: 'Pending',   color: '#f6b73c',              bg: 'rgba(246,183,60,0.12)' },
+    confirmed: { label: 'Confirmed', color: '#34d399',              bg: 'rgba(52,211,153,0.12)' },
+    rejected:  { label: 'Rejected',  color: '#fb6a78',              bg: 'rgba(251,106,120,0.12)' },
     relabeled: { label: 'Relabeled', color: 'oklch(0.72 0.18 280)', bg: 'oklch(0.72 0.18 280 / 0.12)' },
   };
   const { label, color, bg } = map[status];
@@ -47,11 +57,15 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
     setRelabeling(false);
   };
 
-  const borderColor = d.band === 'rev'
+  const borderColor = d.manual
+    ? 'rgba(56,189,248,0.35)'
+    : d.band === 'rev'
     ? 'rgba(246,183,60,0.35)'
     : d.band === 'lo'
     ? 'rgba(251,106,120,0.32)'
     : 'rgba(255,255,255,0.09)';
+
+  const custodyTs = new Date(d.provenance.timestamp).toISOString().slice(11, 19) + 'Z';
 
   return (
     <motion.div
@@ -76,7 +90,7 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
         <div className="flex flex-col gap-1.5 min-w-0">
           <div className="flex items-center gap-2">
             <span
-              className="font-mono text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center border"
+              className="font-mono text-[10px] font-semibold w-5 h-5 rounded-full flex items-center justify-center border shrink-0"
               style={{ color: col, borderColor: col }}
             >
               {d.seq}
@@ -99,39 +113,48 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
               </h3>
             )}
           </div>
+          <StatusBadge status={d.status} manual={d.manual} />
+        </div>
+        {!d.manual && (
+          <div className="font-mono text-2xl tabular shrink-0" style={{ color: col }}>
+            {pct}<span className="text-xs ml-0.5">%</span>
+          </div>
+        )}
+      </div>
+
+      {/* Detection confidence — or Source block for manual */}
+      {d.manual ? (
+        <div>
+          <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-1.5" style={{ color: 'oklch(0.45 0.004 240)' }}>
+            Source
+          </div>
           <div className="flex items-center gap-2">
-            <StatusBadge status={d.status} />
-            {d.source === 'manual' && (
-              <span className="font-mono text-[9px] tracking-widest uppercase px-1.5 py-0.5 rounded" style={{ color: 'oklch(0.72 0.18 280)', background: 'oklch(0.72 0.18 280 / 0.12)' }}>
-                Manual
-              </span>
-            )}
+            <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full" style={{ width: '100%', background: '#38bdf8' }} />
+            </div>
+            <span className="font-mono text-[12px] tabular shrink-0" style={{ color: '#38bdf8' }}>ANALYST</span>
           </div>
         </div>
-        <div className="font-mono text-2xl tabular shrink-0" style={{ color: col }}>
-          {pct}<span className="text-xs ml-0.5">%</span>
-        </div>
-      </div>
-
-      {/* Detection confidence */}
-      <div>
-        <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-1.5 flex justify-between" style={{ color: 'oklch(0.45 0.004 240)' }}>
-          <span>Detection confidence</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: col }} />
+      ) : (
+        <div>
+          <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-1.5 flex justify-between" style={{ color: 'oklch(0.45 0.004 240)' }}>
+            <span>Detection confidence</span>
           </div>
-          <span className="font-mono text-[12px] tabular shrink-0" style={{ color: col }}>{pct}%</span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: col }} />
+            </div>
+            <span className="font-mono text-[12px] tabular shrink-0" style={{ color: col }}>{pct}%</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Classification distribution — AI only */}
-      {d.source === 'ai' && d.classification.length > 0 && (
+      {/* Classification distribution */}
+      {d.classification.length > 0 && (
         <div>
           <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-2 flex justify-between" style={{ color: 'oklch(0.45 0.004 240)' }}>
             <span>Classification</span>
-            <span>top-3</span>
+            <span>{d.manual ? 'analyst-assigned' : d.classification.length === 1 ? 'top class' : 'top-3'}</span>
           </div>
           <div className="flex flex-col gap-1.5">
             {d.classification.map((c, i) => (
@@ -158,7 +181,7 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
       <div className="grid grid-cols-2 gap-1.5">
         {[
           { k: 'Est. Length', v: d.estLength },
-          { k: 'Heading', v: `${d.heading}°` },
+          { k: 'Heading', v: d.heading != null ? `${d.heading}°` : '—' },
           { k: 'Sensor', v: d.provenance.sensorType },
           { k: 'Captured', v: new Date(d.provenance.timestamp).toISOString().slice(11, 19) + 'Z' },
         ].map(({ k, v }) => (
@@ -169,7 +192,7 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
         ))}
       </div>
 
-      {/* Notes */}
+      {/* Rationale / notes */}
       {d.notes && (
         <div className="flex items-start gap-1.5">
           <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: col }} />
@@ -178,59 +201,63 @@ export function DetectionCard({ detection: d, isActive, onAccept, onReject, onRe
       )}
 
       {/* Chain of custody */}
-      {reviewed && d.status !== 'pending' && (
+      {(d.manual || reviewed) && (
         <div className="font-mono text-[10px]" style={{ color: 'oklch(0.45 0.004 240)' }}>
-          {d.status === 'accepted' || d.status === 'relabeled'
-            ? `CONFIRMED by ANALYST-07 @ ${new Date(d.provenance.timestamp).toISOString().slice(11, 19)}Z`
-            : `REJECTED by ANALYST-07 @ ${new Date(d.provenance.timestamp).toISOString().slice(11, 19)}Z`
+          {d.manual
+            ? `DEFINED by ANALYST-07 @ ${custodyTs}`
+            : d.status === 'confirmed' || d.status === 'relabeled'
+            ? `CONFIRMED by ANALYST-07 @ ${custodyTs}`
+            : `REJECTED by ANALYST-07 @ ${custodyTs}`
           }
         </div>
       )}
 
-      {/* Actions */}
-      <div onClick={(e) => e.stopPropagation()}>
-        {reviewed ? (
-          <button
-            onClick={() => onUndo(d.id)}
-            className="flex items-center gap-1.5 text-xs transition-colors"
-            style={{ color: 'oklch(0.45 0.004 240)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'oklch(0.92 0.005 240)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'oklch(0.45 0.004 240)')}
-          >
-            <RotateCcw size={11} /> Undo
-          </button>
-        ) : (
-          <div className="flex gap-2">
+      {/* Actions — hidden for analyst-defined detections */}
+      {!d.manual && (
+        <div onClick={(e) => e.stopPropagation()}>
+          {reviewed ? (
             <button
-              onClick={() => onAccept(d.id)}
-              className="flex items-center gap-1 flex-1 justify-center px-2 py-1.5 rounded text-[12px] border transition-all"
-              style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(52,211,153,0.12)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <Check size={11} strokeWidth={2.5} /> Accept
-            </button>
-            <button
-              onClick={() => onReject(d.id)}
-              className="flex items-center gap-1 flex-1 justify-center px-2 py-1.5 rounded text-[12px] border transition-all"
-              style={{ color: '#fb6a78', borderColor: 'rgba(251,106,120,0.4)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251,106,120,0.12)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <X size={11} strokeWidth={2.5} /> Reject
-            </button>
-            <button
-              onClick={() => { setRelabeling(true); setLabelInput(d.relabeledTo ?? d.label); }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-[12px] border transition-all"
-              style={{ color: 'oklch(0.45 0.004 240)', borderColor: 'rgba(255,255,255,0.09)' }}
+              onClick={() => onUndo(d.id)}
+              className="flex items-center gap-1.5 text-xs transition-colors"
+              style={{ color: 'oklch(0.45 0.004 240)' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = 'oklch(0.92 0.005 240)')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'oklch(0.45 0.004 240)')}
             >
-              ↕ Relabel
+              <RotateCcw size={11} /> Undo
             </button>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => onAccept(d.id)}
+                className="flex items-center gap-1 flex-1 justify-center px-2 py-1.5 rounded text-[12px] border transition-all"
+                style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(52,211,153,0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Check size={11} strokeWidth={2.5} /> Accept
+              </button>
+              <button
+                onClick={() => onReject(d.id)}
+                className="flex items-center gap-1 flex-1 justify-center px-2 py-1.5 rounded text-[12px] border transition-all"
+                style={{ color: '#fb6a78', borderColor: 'rgba(251,106,120,0.4)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251,106,120,0.12)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <X size={11} strokeWidth={2.5} /> Reject
+              </button>
+              <button
+                onClick={() => { setRelabeling(true); setLabelInput(d.relabeledTo ?? d.label); }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded text-[12px] border transition-all"
+                style={{ color: 'oklch(0.45 0.004 240)', borderColor: 'rgba(255,255,255,0.09)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'oklch(0.92 0.005 240)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'oklch(0.45 0.004 240)')}
+              >
+                ↕ Relabel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }

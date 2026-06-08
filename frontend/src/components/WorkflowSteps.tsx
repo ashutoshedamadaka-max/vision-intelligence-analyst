@@ -29,8 +29,8 @@ function phaseToStep(phase: Phase): number {
 
 export function WorkflowSteps({ phase, mode }: Props) {
   const activeStep = phaseToStep(phase);
-  const modelLabel = mode === 'yolo' ? 'YOLO Aerial' : 'OpenAI Vision';
-  const modelColor = mode === 'yolo' ? 'var(--color-confirmed)' : 'var(--color-ai)';
+  const modelLabel = 'Open-Source Aerial Vehicle Detection';
+  const modelColor = 'var(--color-ai)';
 
   return (
     <div className="w-full">
