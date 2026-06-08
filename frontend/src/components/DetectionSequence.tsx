@@ -25,12 +25,14 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
   const timeoutIds = useRef<ReturnType<typeof setTimeout>[]>([]);
   const intervalId = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const sweepXRef       = useRef(0);
-  const resultRef       = useRef<AnalysisResult | null>(null);
-  const acquiredRef     = useRef(new Set<string>());
-  const sweepDoneRef    = useRef(false);
+  const sweepXRef         = useRef(0);
+  const resultRef         = useRef<AnalysisResult | null>(null);
+  const acquiredRef       = useRef(new Set<string>());
+  const sweepDoneRef      = useRef(false);
   const completeCalledRef = useRef(false);
-  const skipRef         = useRef(false);
+  const skipRef           = useRef(false);
+  const autoProceedRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef      = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [logLines,    setLogLines]    = useState<{ text: string; cls: string }[]>([]);
   const [statusLabel, setStatusLabel] = useState<'SCANNING' | 'COMPLETE'>('SCANNING');
@@ -38,6 +40,7 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
   const [skipPending, setSkipPending] = useState(false);
   const [timedOut,    setTimedOut]    = useState(false);
   const [elapsed,     setElapsed]     = useState(0);
+  const [countdown,   setCountdown]   = useState(5);
 
   const addLog = useCallback((text: string, cls: string) => {
     setLogLines(prev => [...prev, { text, cls }]);
@@ -130,6 +133,18 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
     const t3 = setTimeout(() => {
       addLog('READY FOR HUMAN REVIEW', 'g');
       setShowDone(true);
+
+      // Countdown 5 → 0, then auto-proceed to Quality Review
+      let remaining = 5;
+      setCountdown(remaining);
+      countdownRef.current = setInterval(() => {
+        remaining -= 1;
+        setCountdown(remaining);
+        if (remaining <= 0 && countdownRef.current) {
+          clearInterval(countdownRef.current);
+        }
+      }, 1000);
+      autoProceedRef.current = setTimeout(() => onProceed(r), 5000);
     }, 500);
     timeoutIds.current.push(t1, t2, t3);
   }, [addLog, drawFrame]);
@@ -210,6 +225,8 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
 
     return () => {
       if (intervalId.current) clearInterval(intervalId.current);
+      if (autoProceedRef.current) clearTimeout(autoProceedRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
       timeoutIds.current.forEach(clearTimeout);
       cancelAnimationFrame(rafRef.current);
     };
@@ -243,6 +260,8 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
   }, [drawFrame]);
 
   function handleSkip() {
+    if (autoProceedRef.current) clearTimeout(autoProceedRef.current);
+    if (countdownRef.current) clearInterval(countdownRef.current);
     if (result) {
       onProceed(result);
     } else {
@@ -456,13 +475,18 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed, on
               ↺ Replay
             </button>
             <button
-              onClick={() => onProceed(result)}
-              className="px-4 py-2 rounded-lg text-[13px] font-medium border transition-all"
+              onClick={() => {
+                if (autoProceedRef.current) clearTimeout(autoProceedRef.current);
+                if (countdownRef.current) clearInterval(countdownRef.current);
+                onProceed(result);
+              }}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium border transition-all flex items-center gap-2"
               style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.1)' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(52,211,153,0.2)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(52,211,153,0.1)')}
             >
               Proceed to Quality Review →
+              <span className="font-mono text-[11px] opacity-60">({countdown}s)</span>
             </button>
           </div>
         </div>
