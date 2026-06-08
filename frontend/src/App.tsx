@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ImageUploader } from '@/components/ImageUploader';
@@ -119,6 +119,12 @@ export default function App() {
   }, []);
 
   const allReviewed = state.detections.length > 0 && state.detections.every((d) => d.manual || d.status !== 'pending');
+
+  // Unique, sorted class labels derived from current detections (excludes manual)
+  const detectionClasses = useMemo(() => {
+    const labels = new Set(state.detections.filter(d => !d.manual).map(d => d.relabeledTo ?? d.label));
+    return [...labels].sort();
+  }, [state.detections]);
   const handleSignOff = () => setPartial({ phase: 'complete', frozenAt: Date.now(), signOffAt: Date.now() });
   const handleReset = () => {
     if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
@@ -286,6 +292,7 @@ export default function App() {
                 <FilterBar
                   filterClass={state.filterClass}
                   filterBand={state.filterBand}
+                  classes={detectionClasses}
                   onClassChange={(cls) => setPartial({ filterClass: cls })}
                   onBandChange={(band) => setPartial({ filterBand: band })}
                 />
@@ -331,7 +338,7 @@ export default function App() {
                       detection={d}
                       isActive={d.id === state.activeId}
                       dimmed={
-                        (state.filterClass !== 'all' && d.label !== state.filterClass) ||
+                        (state.filterClass !== 'all' && (d.relabeledTo ?? d.label) !== state.filterClass) ||
                         (state.filterBand !== null && d.band !== state.filterBand)
                       }
                       onAccept={handleAccept}

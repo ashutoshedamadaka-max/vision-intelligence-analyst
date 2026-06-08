@@ -143,7 +143,7 @@ export function DetectionCanvas({
   const [dialogLabel, setDialogLabel] = useState<string>(VEHICLE_TAXONOMY[0]);
 
   const isDimmed = useCallback((d: Detection) => {
-    if (filterClass !== 'all' && d.label !== filterClass) return true;
+    if (filterClass !== 'all' && (d.relabeledTo ?? d.label) !== filterClass) return true;
     if (filterBand && d.band !== filterBand) return true;
     return false;
   }, [filterClass, filterBand]);

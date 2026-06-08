@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   filterClass: string;
   filterBand: ConfidenceBand | null;
+  classes: string[];           // unique labels from current detections
   onClassChange: (cls: string) => void;
   onBandChange: (band: ConfidenceBand | null) => void;
 }
@@ -14,15 +15,15 @@ const BAND_CONFIG: { band: ConfidenceBand; label: string; color: string; dimColo
   { band: 'lo',  label: 'Low <60%',     color: '#fb6a78', dimColor: 'rgba(251,106,120,0.14)' },
 ];
 
-export function FilterBar({ filterClass, filterBand, onClassChange, onBandChange }: Props) {
+export function FilterBar({ filterClass, filterBand, classes, onClassChange, onBandChange }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-4 mt-3">
-      {/* Class filter */}
-      <div className="flex items-center gap-2">
+      {/* Class filter — dynamic from actual detections */}
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="font-mono text-[10px] tracking-[0.14em] uppercase" style={{ color: 'oklch(0.45 0.004 240)' }}>
           Class
         </span>
-        {['All', 'Car', 'Truck', 'SUV', 'Unclassified'].map((cls) => {
+        {['All', ...classes].map((cls) => {
           const key = cls === 'All' ? 'all' : cls;
           const active = filterClass === key;
           return (
