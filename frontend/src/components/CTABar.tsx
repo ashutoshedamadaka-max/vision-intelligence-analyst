@@ -89,7 +89,7 @@ const HOW_I_BUILT: string[] = [
   'Tested OpenAI Vision first — got roughly 30% detection on real overhead imagery. Switched to YOLO World, an open-source aerial vehicle detection model, and reached ~75%. Picking the right model for the task mattered more than picking the most capable one.',
   'Detection data is mapped to a structured schema — confidence, classification, bounding box, provenance — so the UI always shows where a detection came from and how certain the model was.',
   'Every analyst action (accept / reject / relabel / draw a missed vehicle) updates the triage queue, canvas, and report instantly — no reloads.',
-  'Built using Claude Code as an engineering pair — I owned the product decisions and spec; Claude Code executed the implementation.',
+  'Built in Visual Studio Code using the Claude Code extension as an engineering pair — I owned the product decisions and spec, Claude Code executed the implementation. The app is hosted on Vercel.',
 ];
 
 const WHAT_I_LEARNT: string[] = [
