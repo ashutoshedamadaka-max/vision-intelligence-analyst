@@ -4,64 +4,61 @@ import { Modal } from '@/components/Modal';
 
 const GITHUB_URL = 'https://github.com/ashutoshedamadaka-max/vision-intelligence-analyst';
 
-/* ─── Architecture diagram ─── */
+/* ─── Architecture diagram — vertical flow ─── */
 function ArchDiagram() {
-  const box = (label: string, sub: string, accent?: string) => (
-    <div
-      className="flex flex-col items-center justify-center rounded-xl border px-4 py-3 text-center"
-      style={{
-        borderColor: accent ? `${accent}40` : 'rgba(255,255,255,0.1)',
-        background: accent ? `${accent}0d` : 'rgba(255,255,255,0.03)',
-        minWidth: 130,
-      }}
-    >
-      <span className="font-mono text-[11px] font-semibold" style={{ color: accent ?? 'oklch(0.92 0.005 240)' }}>
-        {label}
-      </span>
-      <span className="font-mono text-[10px] mt-0.5 leading-tight" style={{ color: 'oklch(0.45 0.004 240)' }}>
-        {sub}
-      </span>
-    </div>
-  );
+  const nodes = [
+    { label: 'Browser', sub: 'React · TypeScript · Vite · Tailwind CSS', accent: '#8b8cf9' },
+    { label: 'Vercel', sub: 'Node.js Serverless API — API key kept server-side', accent: '#34d399' },
+    { label: 'Roboflow', sub: 'YOLO Aerial Detection Model — open-source', accent: '#f6b73c' },
+  ];
 
-  const arrow = (label: string) => (
-    <div className="flex flex-col items-center gap-1 shrink-0">
-      <span className="font-mono text-[9px]" style={{ color: 'oklch(0.40 0.004 240)' }}>{label}</span>
-      <div className="flex items-center gap-0.5">
-        <div className="h-px w-10" style={{ background: 'rgba(255,255,255,0.18)' }} />
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>▶</span>
-      </div>
-    </div>
-  );
+  const edges = [
+    { down: 'POST /api/analyze  (image as base64)', up: 'Detection JSON  (boxes · confidence · class)' },
+    { down: 'Raw base64 image', up: 'Predictions JSON  (x · y · w · h · confidence)' },
+  ];
 
   return (
-    <div>
-      <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-3" style={{ color: 'oklch(0.45 0.004 240)' }}>
+    <div className="rounded-xl border p-4" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+      <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-4" style={{ color: 'oklch(0.40 0.004 240)' }}>
         System Architecture
       </div>
-      <div className="flex items-center gap-3 flex-wrap justify-center">
-        {box('Browser', 'React · TS · Vite\nTailwind CSS', '#8b8cf9')}
-        {arrow('POST /api/analyze')}
-        {box('Vercel', 'Node.js\nServerless API', '#34d399')}
-        {arrow('base64 image')}
-        {box('Roboflow', 'YOLO Aerial\nopen-source', '#f6b73c')}
-      </div>
-      <div className="flex items-center gap-3 flex-wrap justify-center mt-2">
-        <div style={{ minWidth: 130 }} />
-        <div className="flex flex-col items-center gap-0.5 shrink-0">
-          <div className="flex items-center gap-0.5">
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>◀</span>
-            <div className="h-px w-10" style={{ background: 'rgba(255,255,255,0.18)' }} />
-          </div>
-          <span className="font-mono text-[9px]" style={{ color: 'oklch(0.40 0.004 240)' }}>detection JSON</span>
-        </div>
-        <div style={{ minWidth: 130 }} />
-        <div className="flex flex-col items-center gap-0.5 shrink-0">
-          <div className="flex items-center gap-0.5">
-            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>◀</span>
-            <div className="h-px w-10" style={{ background: 'rgba(255,255,255,0.18)' }} />
-          </div>
-          <span className="font-mono text-[9px]" style={{ color: 'oklch(0.40 0.004 240)' }}>predictions JSON</span>
+
+      <div className="flex gap-4">
+        {/* Left: node boxes */}
+        <div className="flex flex-col items-stretch gap-0 flex-1">
+          {nodes.map((n, i) => (
+            <div key={n.label}>
+              {/* Node box */}
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{ borderColor: `${n.accent}45`, background: `${n.accent}0e` }}
+              >
+                <div className="font-mono text-[12px] font-semibold" style={{ color: n.accent }}>{n.label}</div>
+                <div className="font-mono text-[10px] mt-0.5 leading-snug" style={{ color: 'oklch(0.50 0.004 240)' }}>{n.sub}</div>
+              </div>
+
+              {/* Connector between nodes */}
+              {i < nodes.length - 1 && (
+                <div className="flex items-stretch gap-3 py-1">
+                  {/* Vertical line */}
+                  <div className="flex flex-col items-center" style={{ width: 24, flexShrink: 0 }}>
+                    <div className="flex-1 w-px" style={{ background: 'rgba(255,255,255,0.12)', minHeight: 32 }} />
+                  </div>
+                  {/* Labels */}
+                  <div className="flex flex-col justify-around py-1 gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>↓</span>
+                      <span className="font-mono text-[10px]" style={{ color: 'oklch(0.50 0.004 240)' }}>{edges[i].down}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px]" style={{ color: 'rgba(255,255,255,0.25)' }}>↑</span>
+                      <span className="font-mono text-[10px]" style={{ color: 'oklch(0.45 0.004 240)' }}>{edges[i].up}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
