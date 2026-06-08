@@ -1,4 +1,4 @@
-import { Brain, Crosshair } from 'lucide-react';
+import { Crosshair } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DetectionMode } from '@/lib/types';
 
@@ -10,17 +10,10 @@ interface Props {
 
 const OPTIONS: { mode: DetectionMode; icon: React.ReactNode; label: string; sub: string; color: string }[] = [
   {
-    mode: 'openai',
-    icon: <Brain size={16} />,
-    label: 'OpenAI Vision',
-    sub: 'Natural language reasoning, flexible labels',
-    color: 'var(--color-ai)',
-  },
-  {
     mode: 'yolo',
     icon: <Crosshair size={16} />,
     label: 'YOLO Aerial',
-    sub: 'Precise bounding boxes, aerial-trained model',
+    sub: 'Open-source aerial vehicle detection',
     color: 'var(--color-confirmed)',
   },
 ];

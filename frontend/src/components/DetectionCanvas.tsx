@@ -141,7 +141,6 @@ export function DetectionCanvas({
   const drawRef = useRef<DrawState>({ startX: 0, startY: 0, currentX: 0, currentY: 0, active: false });
   const [dialog, setDialog] = useState<ManualDialogState>({ visible: false, bbox: null, screenX: 0, screenY: 0 });
   const [dialogLabel, setDialogLabel] = useState<string>(VEHICLE_TAXONOMY[0]);
-  const [dialogNotes, setDialogNotes] = useState('');
 
   const isDimmed = useCallback((d: Detection) => {
     if (filterClass !== 'all' && d.label !== filterClass) return true;
@@ -288,7 +287,6 @@ export function DetectionCanvas({
     }
     setDialog({ visible: false, bbox: null, screenX: 0, screenY: 0 });
     setDialogLabel(VEHICLE_TAXONOMY[0]);
-    setDialogNotes('');
     drawAll();
   };
 
