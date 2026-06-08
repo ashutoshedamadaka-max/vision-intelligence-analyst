@@ -1,11 +1,13 @@
 import { Printer, RefreshCw } from 'lucide-react';
 import type { Detection } from '@/lib/types';
+import { DetectionCanvas } from '@/components/DetectionCanvas';
 
 interface Props {
   detections: Detection[];
   analysisId: string;
   timeToInsightMs: number;
   signOffAt: string;
+  imageUrl?: string;
   onReset: () => void;
 }
 
@@ -21,7 +23,7 @@ function formatTimestamp(iso: string): string {
   catch { return iso; }
 }
 
-export function DisseminationCard({ detections, analysisId, timeToInsightMs, signOffAt, onReset }: Props) {
+export function DisseminationCard({ detections, analysisId, timeToInsightMs, signOffAt, imageUrl, onReset }: Props) {
   const confirmed = detections.filter((d) => d.status === 'confirmed' || d.status === 'relabeled' || d.manual);
 
   return (
@@ -72,6 +74,29 @@ export function DisseminationCard({ detections, analysisId, timeToInsightMs, sig
             </p>
           </div>
         </div>
+
+        {/* Annotated sensor image */}
+        {imageUrl && confirmed.length > 0 && (
+          <div>
+            <div className="font-mono text-[9px] tracking-[0.16em] uppercase mb-2" style={{ color: 'oklch(0.45 0.004 240)' }}>
+              Sensor Image — Confirmed Detections
+            </div>
+            <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.09)' }}>
+              <DetectionCanvas
+                imageUrl={imageUrl}
+                detections={confirmed}
+                activeId={null}
+                drawMode={false}
+                showHeatmap={false}
+                showBoxes={true}
+                filterClass="all"
+                filterBand={null}
+                onBoxClick={() => {}}
+                onManualAdd={() => {}}
+              />
+            </div>
+          </div>
+        )}
 
         {confirmed.length === 0 ? (
           <p className="text-sm text-center py-4" style={{ color: 'oklch(0.45 0.004 240)' }}>

@@ -373,6 +373,7 @@ export default function App() {
             analysisId={state.result.analysisId}
             timeToInsightMs={(state.signOffAt ?? state.frozenAt)! - state.startedAt}
             signOffAt={new Date((state.signOffAt ?? state.frozenAt)!).toISOString()}
+            imageUrl={state.previewUrl ?? undefined}
             onReset={handleReset}
           />
         )}
