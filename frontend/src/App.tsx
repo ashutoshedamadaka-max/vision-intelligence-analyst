@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { ImageUploader } from '@/components/ImageUploader';
 import { WorkflowSteps } from '@/components/WorkflowSteps';
@@ -138,9 +139,23 @@ export default function App() {
               Fine-grained vehicle detection & classification — human review required
             </p>
           </div>
-          {(state.phase === 'analyzing' || state.phase === 'review' || state.phase === 'complete') && (
-            <TimeToInsightTimer startedAt={state.startedAt} frozenAt={state.frozenAt} phase={state.phase} />
-          )}
+          <div className="flex items-center gap-3">
+            {state.phase !== 'idle' && (
+              <button
+                onClick={handleReset}
+                title="Start over"
+                className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-2.5 py-1.5 transition-colors"
+                style={{ color: 'oklch(0.45 0.004 240)', borderColor: 'rgba(255,255,255,0.09)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'oklch(0.92 0.005 240)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'oklch(0.45 0.004 240)')}
+              >
+                <RefreshCw size={12} /> Reset
+              </button>
+            )}
+            {(state.phase === 'analyzing' || state.phase === 'review' || state.phase === 'complete') && (
+              <TimeToInsightTimer startedAt={state.startedAt} frozenAt={state.frozenAt} phase={state.phase} />
+            )}
+          </div>
         </div>
 
         {/* Workflow stepper */}
@@ -176,6 +191,7 @@ export default function App() {
             result={state.sequenceResult}
             startedAt={state.startedAt}
             onProceed={handleProceedToReview}
+            onReset={handleReset}
           />
         )}
 

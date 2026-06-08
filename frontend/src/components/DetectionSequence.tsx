@@ -7,6 +7,7 @@ interface Props {
   result: AnalysisResult | null; // null while API pending, populated on return
   startedAt: number;
   onProceed: (result: AnalysisResult) => void;
+  onReset: () => void;
 }
 
 const BOOT = [
@@ -16,7 +17,7 @@ const BOOT = [
   { text: 'DETECT · yolo-world-aerial (open-source) · scanning…', cls: 'b', delay: 760 },
 ];
 
-export function DetectionSequence({ previewUrl, result, startedAt, onProceed }: Props) {
+export function DetectionSequence({ previewUrl, result, startedAt, onProceed, onReset }: Props) {
   const imgRef    = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logRef    = useRef<HTMLDivElement>(null);
@@ -35,6 +36,7 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed }: 
   const [statusLabel, setStatusLabel] = useState<'SCANNING' | 'COMPLETE'>('SCANNING');
   const [showDone,    setShowDone]    = useState(false);
   const [skipPending, setSkipPending] = useState(false);
+  const [timedOut,    setTimedOut]    = useState(false);
   const [elapsed,     setElapsed]     = useState(0);
 
   const addLog = useCallback((text: string, cls: string) => {
@@ -139,6 +141,16 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed }: 
 
     // Clock
     intervalId.current = setInterval(() => setElapsed(Date.now() - startedAt), 60);
+
+    // 30-second timeout — if no result, show error state
+    const noResultTimeout = setTimeout(() => {
+      if (!resultRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        if (intervalId.current) clearInterval(intervalId.current);
+        setTimedOut(true);
+      }
+    }, 30000);
+    timeoutIds.current.push(noResultTimeout);
 
     // Boot telemetry
     BOOT.forEach(({ text, cls, delay }) => {
@@ -268,7 +280,28 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed }: 
         {result ? '→ Proceed now' : '⏩ Skip'}
       </button>
 
-      {skipPending && !result ? (
+      {timedOut ? (
+        <div className="flex flex-col items-center gap-5 py-16 text-center rounded-xl border" style={{ borderColor: 'rgba(251,106,120,0.3)', background: 'rgba(251,106,120,0.06)' }}>
+          <div className="text-3xl" style={{ color: '#fb6a78' }}>⚠</div>
+          <div>
+            <div className="font-serif text-xl" style={{ color: '#fb6a78' }}>No objects detected</div>
+            <div className="font-mono text-[11px] mt-1.5" style={{ color: 'oklch(0.45 0.004 240)' }}>
+              Detection timed out after 30 seconds — the system could not identify any objects in this image.
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onReset}
+              className="px-4 py-2 rounded-lg text-[13px] font-medium border transition-all"
+              style={{ color: '#fb6a78', borderColor: 'rgba(251,106,120,0.4)', background: 'rgba(251,106,120,0.1)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(251,106,120,0.2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(251,106,120,0.1)')}
+            >
+              ↺ Try a different image
+            </button>
+          </div>
+        </div>
+      ) : skipPending && !result ? (
         <div className="flex flex-col items-center gap-4 py-12">
           <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
             style={{ borderColor: '#34d399', borderTopColor: 'transparent' }} />
@@ -350,7 +383,15 @@ export function DetectionSequence({ previewUrl, result, startedAt, onProceed }: 
             <div
               ref={logRef}
               className="flex-1 px-3.5 py-3 overflow-y-auto"
-              style={{ fontFamily: '"IBM Plex Mono",monospace', fontSize: 11, lineHeight: 1.85, minHeight: 200 }}
+              style={{
+                fontFamily: '"IBM Plex Mono",monospace',
+                fontSize: 11,
+                lineHeight: 1.85,
+                minHeight: 200,
+                maxHeight: 320,
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255,255,255,0.18) transparent',
+              }}
             >
               {logLines.map((l, i) => (
                 <div key={i} style={{ whiteSpace: 'nowrap', color: logColor(l.cls) }}>
