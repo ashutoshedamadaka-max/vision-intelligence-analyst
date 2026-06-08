@@ -56,12 +56,13 @@ export function FilterBar({ filterClass, filterBand, classes, onClassChange, onB
             <button
               key={band}
               onClick={() => onBandChange(active ? null : band)}
-              className="text-[12px] border rounded-full px-3 py-1 transition-all"
-              style={{
-                color: active ? color : 'oklch(0.45 0.004 240)',
-                borderColor: active ? color : 'rgba(255,255,255,0.1)',
-                background: active ? dimColor : 'transparent',
-              }}
+              className={cn(
+                'text-[12px] border rounded-full px-3 py-1 transition-all',
+                active
+                  ? ''
+                  : 'border-white/20 text-white/50 hover:text-white/80 hover:border-white/30'
+              )}
+              style={active ? { color, borderColor: color, background: dimColor } : undefined}
             >
               {label}
             </button>
