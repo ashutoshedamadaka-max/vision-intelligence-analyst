@@ -14,6 +14,7 @@ import { AggregateSummary } from '@/components/AggregateSummary';
 import { FilterBar } from '@/components/FilterBar';
 import { analyzeImage } from '@/lib/api';
 import { DetectionSequence } from '@/components/DetectionSequence';
+import { CTABar } from '@/components/CTABar';
 import type { Detection, DetectionMode, AnalysisResult, BBox, ConfidenceBand } from '@/lib/types';
 
 type Phase = 'idle' | 'uploading' | 'analyzing' | 'review' | 'complete';
@@ -133,7 +134,7 @@ export default function App() {
 
 
   return (
-    <div className="min-h-screen" style={{ background: 'oklch(0.08 0.005 240)', color: 'oklch(0.92 0.005 240)' }}>
+    <div className="min-h-screen pb-16" style={{ background: 'oklch(0.08 0.005 240)', color: 'oklch(0.92 0.005 240)' }}>
       <ClassificationBanner />
 
       <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -389,6 +390,7 @@ export default function App() {
       </div>
 
       <ClassificationBanner />
+      <CTABar />
     </div>
   );
 }
