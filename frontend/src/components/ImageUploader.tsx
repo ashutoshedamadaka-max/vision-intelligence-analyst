@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
-import { ImagePlus, RefreshCw, Download, Play } from 'lucide-react';
+import { ImagePlus, RefreshCw, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -13,7 +13,6 @@ export function ImageUploader({ onFileSelect }: Props) {
   const [dragging, setDragging]     = useState(false);
   const [preview, setPreview]       = useState<string | null>(null);
   const [error, setError]           = useState<string | null>(null);
-  const [loadingSample, setLoadingSample] = useState(false);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -46,21 +45,6 @@ export function ImageUploader({ onFileSelect }: Props) {
     if (file) handleFile(file);
   };
 
-  const useSampleImage = async () => {
-    setLoadingSample(true);
-    setError(null);
-    try {
-      const res = await fetch(SAMPLE_PATH);
-      if (!res.ok) throw new Error('Sample image not found');
-      const blob = await res.blob();
-      const file = new File([blob], 'sample-vehicle.jpg', { type: 'image/jpeg' });
-      handleFile(file);
-    } catch {
-      setError('Could not load sample image.');
-    } finally {
-      setLoadingSample(false);
-    }
-  };
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -131,30 +115,17 @@ export function ImageUploader({ onFileSelect }: Props) {
             Highway overhead view · multiple vehicle types
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <a
-            href={SAMPLE_PATH}
-            download="sample-vehicle.jpg"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-3 py-1.5 transition-all"
-            style={{ color: 'oklch(0.55 0.004 240)', borderColor: 'rgba(255,255,255,0.1)', textDecoration: 'none' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = 'oklch(0.92 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'oklch(0.55 0.004 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-          >
-            <Download size={11} /> Download
-          </a>
-          <button
-            onClick={useSampleImage}
-            disabled={loadingSample}
-            className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-3 py-1.5 transition-all"
-            style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)' }}
-            onMouseEnter={(e) => { if (!loadingSample) e.currentTarget.style.background = 'rgba(52,211,153,0.18)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(52,211,153,0.08)'; }}
-          >
-            <Play size={11} />
-            {loadingSample ? 'Loading…' : 'Use sample'}
-          </button>
-        </div>
+        <a
+          href={SAMPLE_PATH}
+          download="sample-vehicle.jpg"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-3 py-1.5 transition-all shrink-0"
+          style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)', textDecoration: 'none' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(52,211,153,0.18)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(52,211,153,0.08)'; }}
+        >
+          <Download size={11} /> Download sample
+        </a>
       </div>
 
       <p className="text-xs text-[color:var(--color-muted)] text-center">
