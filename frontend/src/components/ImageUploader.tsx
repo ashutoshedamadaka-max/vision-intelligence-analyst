@@ -87,7 +87,7 @@ export function ImageUploader({ onFileSelect }: Props) {
                 Drop overhead image or click to upload
               </p>
               <p className="text-xs text-[color:var(--color-muted)] mt-1">
-                JPEG, PNG, TIFF only — max 5 MB
+                JPG, PNG, TIFF — max 5 MB
               </p>
             </div>
           </div>
@@ -140,7 +140,7 @@ export function ImageUploader({ onFileSelect }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/tiff"
+        accept="image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff"
         className="hidden"
         onChange={onChange}
       />
