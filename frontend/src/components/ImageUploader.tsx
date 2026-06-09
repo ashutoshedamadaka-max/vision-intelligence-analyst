@@ -1,17 +1,19 @@
 import { useRef, useState, useCallback } from 'react';
-import { ImagePlus, RefreshCw } from 'lucide-react';
+import { ImagePlus, RefreshCw, Download, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
   onFileSelect: (file: File, previewUrl: string) => void;
 }
 
+const SAMPLE_PATH = '/sample-vehicle.jpg';
+
 export function ImageUploader({ onFileSelect }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging]     = useState(false);
+  const [preview, setPreview]       = useState<string | null>(null);
+  const [error, setError]           = useState<string | null>(null);
+  const [loadingSample, setLoadingSample] = useState(false);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -44,8 +46,25 @@ export function ImageUploader({ onFileSelect }: Props) {
     if (file) handleFile(file);
   };
 
+  const useSampleImage = async () => {
+    setLoadingSample(true);
+    setError(null);
+    try {
+      const res = await fetch(SAMPLE_PATH);
+      if (!res.ok) throw new Error('Sample image not found');
+      const blob = await res.blob();
+      const file = new File([blob], 'sample-vehicle.jpg', { type: 'image/jpeg' });
+      handleFile(file);
+    } catch {
+      setError('Could not load sample image.');
+    } finally {
+      setLoadingSample(false);
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col gap-3">
+      {/* Upload zone */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -91,13 +110,60 @@ export function ImageUploader({ onFileSelect }: Props) {
         )}
       </div>
 
-      <p className="mt-2 text-xs text-[color:var(--color-muted)] text-center">
+      {/* Sample image card */}
+      <div
+        className="flex items-center gap-4 rounded-lg border px-4 py-3"
+        style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)' }}
+      >
+        {/* Thumbnail */}
+        <img
+          src={SAMPLE_PATH}
+          alt="Sample vehicle image"
+          className="rounded shrink-0 object-cover"
+          style={{ width: 72, height: 48, borderColor: 'rgba(255,255,255,0.1)', border: '0.5px solid rgba(255,255,255,0.1)' }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium" style={{ color: 'oklch(0.88 0.005 240)' }}>
+            Sample vehicle image
+          </p>
+          <p className="text-[11px] mt-0.5" style={{ color: 'oklch(0.45 0.004 240)' }}>
+            Highway overhead view · multiple vehicle types
+          </p>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <a
+            href={SAMPLE_PATH}
+            download="sample-vehicle.jpg"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-3 py-1.5 transition-all"
+            style={{ color: 'oklch(0.55 0.004 240)', borderColor: 'rgba(255,255,255,0.1)', textDecoration: 'none' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'oklch(0.92 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'oklch(0.55 0.004 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          >
+            <Download size={11} /> Download
+          </a>
+          <button
+            onClick={useSampleImage}
+            disabled={loadingSample}
+            className="flex items-center gap-1.5 font-mono text-[11px] border rounded px-3 py-1.5 transition-all"
+            style={{ color: '#34d399', borderColor: 'rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)' }}
+            onMouseEnter={(e) => { if (!loadingSample) e.currentTarget.style.background = 'rgba(52,211,153,0.18)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(52,211,153,0.08)'; }}
+          >
+            <Play size={11} />
+            {loadingSample ? 'Loading…' : 'Use sample'}
+          </button>
+        </div>
+      </div>
+
+      <p className="text-xs text-[color:var(--color-muted)] text-center">
         Prototype uses public overhead imagery (xView / DOTA datasets).
         Production would use proprietary sensor data.
       </p>
 
       {error && (
-        <p className="mt-2 text-xs text-center" style={{ color: '#fb6a78' }}>{error}</p>
+        <p className="text-xs text-center" style={{ color: '#fb6a78' }}>{error}</p>
       )}
 
       <input
