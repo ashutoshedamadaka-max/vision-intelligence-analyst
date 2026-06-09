@@ -139,7 +139,7 @@ export default function App() {
 
       <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-4 flex-wrap pb-2" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
           <div>
             <h1 className="font-serif text-3xl">Vision Intelligence Analyst</h1>
             <p className="text-[13px] mt-1.5" style={{ color: 'oklch(0.45 0.004 240)' }}>
@@ -166,7 +166,9 @@ export default function App() {
         </div>
 
         {/* Workflow stepper */}
-        <WorkflowSteps phase={state.phase} mode={state.mode} />
+        <div className="rounded-xl border px-6 py-4" style={{ borderColor: 'rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.025)' }}>
+          <WorkflowSteps phase={state.phase} mode={state.mode} />
+        </div>
 
         {/* Error banner */}
         {state.error && (
@@ -177,17 +179,28 @@ export default function App() {
 
         {/* ── PHASE: idle / uploading ── */}
         {(state.phase === 'idle' || state.phase === 'uploading') && (
-          <div className="flex flex-col gap-5 max-w-xl mx-auto w-full">
-            <ImageUploader onFileSelect={handleFileSelect} />
-            {state.phase === 'uploading' && (
-              <button
-                onClick={handleAnalyze}
-                className="w-full py-3 rounded-lg font-medium text-sm transition-opacity hover:opacity-90"
-                style={{ background: 'oklch(0.72 0.18 280)', color: 'white' }}
-              >
-                Analyze Image
-              </button>
-            )}
+          <div className="max-w-xl mx-auto w-full">
+            <div className="rounded-xl border p-5 flex flex-col gap-4" style={{ borderColor: 'rgba(255,255,255,0.09)', background: 'rgba(255,255,255,0.025)' }}>
+              <div>
+                <p className="font-mono text-[9px] tracking-[0.18em] uppercase mb-3" style={{ color: 'oklch(0.40 0.004 240)' }}>
+                  Upload sensor image
+                </p>
+                <ImageUploader onFileSelect={handleFileSelect} />
+              </div>
+
+              {state.phase === 'uploading' && (
+                <>
+                  <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)' }} />
+                  <button
+                    onClick={handleAnalyze}
+                    className="w-full py-3 rounded-lg font-medium text-sm transition-opacity hover:opacity-90"
+                    style={{ background: 'oklch(0.72 0.18 280)', color: 'white' }}
+                  >
+                    Run Detection →
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
