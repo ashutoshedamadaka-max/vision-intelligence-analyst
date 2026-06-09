@@ -96,12 +96,25 @@ const WHAT_I_LEARNT: string[] = [
   'The hardest design problem wasn\'t integrating the AI — it was making confidence legible. A number means nothing to an analyst under pressure unless it has visual weight and a clear action attached to it.',
 ];
 
+const PULSE_STYLE = `
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139,140,249,0); }
+  50%       { box-shadow: 0 0 14px 3px rgba(139,140,249,0.35); }
+}
+.cta-pill { animation: ctaPulse 2.4s ease-in-out infinite; }
+.cta-pill:nth-child(2) { animation-delay: 0.8s; }
+.cta-pill:nth-child(3) { animation-delay: 1.6s; }
+.cta-pill:hover { animation: none; }
+`;
+
 /* ─── Main bar ─── */
 export function CTABar() {
   const [open, setOpen] = useState<'built' | 'learnt' | null>(null);
 
   return (
     <>
+      <style>{PULSE_STYLE}</style>
+
       {/* Fixed bottom bar */}
       <div
         className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3"
@@ -113,7 +126,7 @@ export function CTABar() {
       >
         <button
           onClick={() => setOpen('built')}
-          className="flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
+          className="cta-pill flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
           style={{ color: 'oklch(0.65 0.005 240)', borderColor: 'rgba(255,255,255,0.14)' }}
           onMouseEnter={(e) => { e.currentTarget.style.color = 'oklch(0.92 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'oklch(0.65 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; }}
@@ -123,7 +136,7 @@ export function CTABar() {
 
         <button
           onClick={() => setOpen('learnt')}
-          className="flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
+          className="cta-pill flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
           style={{ color: 'oklch(0.65 0.005 240)', borderColor: 'rgba(255,255,255,0.14)' }}
           onMouseEnter={(e) => { e.currentTarget.style.color = 'oklch(0.92 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'oklch(0.65 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; }}
@@ -135,7 +148,7 @@ export function CTABar() {
           href={GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
+          className="cta-pill flex items-center gap-2 font-mono text-[11px] tracking-wide border rounded-full px-4 py-2 transition-all"
           style={{ color: 'oklch(0.65 0.005 240)', borderColor: 'rgba(255,255,255,0.14)', textDecoration: 'none' }}
           onMouseEnter={(e) => { e.currentTarget.style.color = 'oklch(0.92 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = 'oklch(0.65 0.005 240)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; }}
